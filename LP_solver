@@ -1,0 +1,80 @@
+%Alex Newhall Purdue IE335 Assignment
+%12/4/22 1 author
+%Branch and bound sover of LP problems based on user input of form max cx s.t. Ax = b
+
+
+tic     %start timer
+
+% This section asks for the inputs that make the LP problem and stores them
+fprintf('Input the values for the LP problem max cx s.t. Ax=b. Use the symbols [] , ; when inputting matrices/vectors.\n');  %inputting instructions
+A = input('Enter the matrix A (in form mxn): ');      %user input for matrix A. m is # of rows, n is # of col
+b = input('Enter the vector b (in form mx1): ');      %user input for vector b
+c = -input('Enter the vector c (in form nx1): ');     %user input for vector c, must be flipped as my method uses min instead of max
+
+% This section defines several variables to be used later
+NumOfVars = numel(c);               %number of variables in c matrix
+ZeroMatrix = zeros(NumOfVars, 1);   %makes zero matrix of size of c
+InfMatrix = inf*ones(NumOfVars);    %makes one matrix of size of cxc
+Aeq = [];                           %initializes A holder
+Beq = [];                           %initializes B holder
+Asize = size(A);
+n = Asize(2);
+IntMark = 1:n;
+
+%Call function
+[Xvals, i, oofv] = branch(c, A, b, Aeq, Beq, ZeroMatrix, InfMatrix, NumOfVars);
+FinalXVals = intlinprog(c, IntMark, A, b);
+toc         %stop timer
+
+%Print Statements
+fprintf('The values at the optimal solution are: ');
+disp(FinalXVals);
+fprintf('\n');
+
+% This section begins the branch and bound method
+function [ret1, ret2, ret3] = branch (c,A,b,Aeq,Beq,ZeroMatrix,InfMatrix,NumOfVars)        %Branch function to repeatedly call
+IntIndex = 1;                       %initializes integer index value
+[Xvals, oofv] = linprog(c,A,b,Aeq,Beq,ZeroMatrix,InfMatrix);   %Returns x values and oofv of relaxed LP
+
+% Begins for loop to check for integer and build branch of x values
+for i = 1:NumOfVars     %loop through to build properly sized branch
+    if ((isnan(oofv)) && (~mod(Xvals(i),1)))   %check if integer is present
+        IntIndex = 0;
+        VarVal = floor(Xvals(i));
+        VarIn = i;
+    end
+end
+
+if (IntIndex == 1)      % Begins check if the variables are integers
+    if (isnan(oofv))
+        ret1 = NA;
+        ret2 = 1;
+        ret3 = oofv;
+    else
+        ret1 = Xvals;
+        ret2 = 1;
+        ret3 = oofv;
+    end
+else
+    ZeroMatrix1 = ZeroMatrix;       %Sets new vars for new branches to be made
+    ZeroMatrix2 = ZeroMatrix;
+    InfMatrix1 = InfMatrix;
+    InfMatrix2 = InfMatrix;
+    ZeroMatrix1(VarIn) = VarVal + 1;
+    InfMatrix2(VarIn) = VarVal;
+
+    [XVals1, i1, oofv1] = branch(c, A, b, Aeq, Beq, ZeroMatrix1, InfMatrix1,NumOfVars);     %Starts down another branch
+    [XVals2, i2, oofv2] = branch(c, A, b, Aeq, Beq, ZeroMatrix2, InfMatrix2,NumOfVars);     %Starts down another branch
+
+    if (oofv < oofv2)       %Determins which LP to continue with
+        ret1 = XVals1;
+        ret2 = i1 + i2;
+        ret3 = oofv1;
+    else
+        ret1 = XVals2;
+        ret2 = i1 + i2;
+        ret3 = oofv2;
+    end
+end
+return;
+end
