@@ -1,0 +1,92 @@
+%Alex Newhall Purdue ENGR132 Assignment
+%2/20/22
+%Exploratory data analysis of a landslide dataset
+
+
+LandSlideData = readtable('Data_global_landslide.csv');     %This loads in the csv file 
+LandSlideArray = table2array(LandSlideData);                %This turns the table into an array to perform functons with
+
+EventYear = LandSlideArray(:,1);    %creates an array of just the event years
+Category = LandSlideArray(:,2);     %creates an array of just the categories
+Trigger = LandSlideArray(:,3);      %creates an array of just the triggers
+Size = LandSlideArray(:,4);         %creates an array of just the size
+Fatalities = LandSlideArray(:,5);   %creates an array of just the fatalities
+Injuries = LandSlideArray(:,6);     %creates an array of just the injuries
+Longitude = LandSlideArray(:,7);    %creates an array of just the longitude
+Latitude = LandSlideArray(:,8);     %creates an array of just the latitude
+
+
+
+%% 
+% 
+% 
+% 
+%% __________________
+%% CALCULATIONS
+% 
+
+CatTrig = [Category Trigger];       %creates a combined array of categories and triggers
+CatTrigSum = sum(CatTrig,2)         %adds each row of the array
+Num12 = sum(CatTrigSum(:) == 12)    %counts the number of mudslides caused by rain
+Num22 = sum(CatTrigSum(:) == 22)    %counts the number of mudslides caused by constant rain
+Num42 = sum(CatTrigSum(:) == 42)    %counts the number of mudslides caused by snow
+Num32 = sum(CatTrigSum(:) == 32)    %counts the number of mudslide caused by downpour
+Num33 = sum(CatTrigSum(:) == 33)    %counts the number of snowslides caused by downpour
+Part1Ans = (Num12 + Num22 + Num42 + Num32 + Num33)      %counts the number of all the true conditions to give the answer for part 1
+
+SnowArray = Category == 3           %Checks for instances of snow avalanches
+SnowArrayLat = Latitude(SnowArray)  %Compiles the latitudes where snow avalanches occured
+Part2Ans = mean(SnowArrayLat)       %Averages the latitudes giving the answer for part 2
+
+HighFatalities = Fatalities > 50    %Compiles the avalanches where there were over 50 fatalities
+HighFatLat = Latitude(HighFatalities)   %Finds the latitudes that satisfies the fatality constraint
+HighFatLon = Longitude(HighFatalities)  % Finds the longitudes that satisfies the fatality constraint
+PosHighFatLat = HighFatLat > 0          %Finds the latitude that satisfies the positive constraint
+NumPosHighFatLat = sum(PosHighFatLat)   %Counts the number of latitudes that satisfy the conditions
+NegHighFatLon = HighFatLon < 0          %Finds the longitudes that satisfy the negative constraint
+NumNegHighFatLon = sum(NegHighFatLon)   %Counts the number of longitudes that satisfy the constraints
+BadPos = (HighFatLon < 0) & (HighFatLat > 0)    %Finds the places where the latitude is positive and the longitude is negative
+NumBadPos = sum(BadPos)                 %Counts the locations that fail the final condition
+Part3Ans = (NumPosHighFatLat + NumNegHighFatLon - NumBadPos)    %Totals up the locations that satisfy a location constraint and subtracts the number of locations that satisfy both at the same time
+
+MudLand = Category < 3              %Constrains the category of the avalanch
+PropTrig = Trigger == 40            %Constrains the trigger
+PropSize = Size > 100               %Sets the size constraint
+PropLoc = Latitude > 0              %Sets the location constraing
+PropAvalanchLoc = MudLand & PropTrig & PropSize & PropLoc   %Combines all the constraints together
+Part4Ans = sum(PropAvalanchLoc)     %Counts the number of instances the constraints are met
+
+CorrectSize = Size == 200       %Creates the size constraint
+CorrectTrig = Category == 3     %Creates the category constraing
+CorrectLat = (Latitude > 19.5) & (Latitude <64.86)      %Creates the latitude constraing
+CorrectLon = Longitude < 0      %Creates the negative longitude constraint
+FullyConst = CorrectSize & CorrectTrig & CorrectLat & CorrectLon    %Combines the constraints into one logical array
+Part5_1Ans = EventYear(FullyConst)  %Assigns the years to where the constraints are satisied
+Part5_2Ans = sum(FullyConst)        %Tallies the number of years assigned
+
+
+
+
+
+
+
+
+%% 
+% 
+% 
+% 
+%% __________________
+%% FORMATTED TEXT DISPLAYS
+% 
+
+Ans1 = 'The answer for part 1 was that there were %.0f instances in which there was a mudslide whose trigger was not a downpour or a landslide that was triggered by a downpour but was not a mudslide.\n';    %Phrasing for the first question
+Ans2 = 'The answer for part 2 was that the average latitude of a snow avalanche was %.3f degrees. \n';      %Phrasing for the second question
+Ans3 = 'The answer for part 3 was that there were %.0f cases above 50 fatalities within latitudes greater than 0 or longitude less than 0 but not both. \n';   %Phrasing for the third question
+Ans4 = 'The answer for part 4 was that there were %.0f cases of mudslides and landslides due to snow fall or melt that were medium or larger in the Northern Hemisphere. \n';  %Phrasing for the fourth question
+Ans5 = 'The answer for part 5 was that there was %.0f year, in %.0f, where a medium snow avalanche occured in the USA. \n';    %Phrasing for the last question
+
+fprintf(Ans1,Part1Ans)  %Displays the first answer
+fprintf(Ans2,Part2Ans)  %Displays the second answer
+fprintf(Ans3,Part3Ans)  %Displays the third answer
+fprintf(Ans4,Part4Ans)  %Displays the fourth answer
+fprintf(Ans5,Part5_2Ans,Part5_1Ans) %Displays the final answer
